@@ -16,6 +16,11 @@ const userSchema = mongoose.Schema({
     required: true,
     unique: true,
   },
+  company_id: {
+    type: String,
+    required: true,
+    unique: true,
+  },
 });
 
 export const User = mongoose.model("User", userSchema);
