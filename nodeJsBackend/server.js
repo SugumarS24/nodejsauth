@@ -10,6 +10,5 @@ app.use(express.json()); //will allow us to parse req.body
 app.use("/api/auth", authRoutes);
 
 app.listen(PORT, () => {
-  console.log("Node run successfully");
   connectDB();
 });

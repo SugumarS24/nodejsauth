@@ -1,7 +1,7 @@
 import { User } from "../models/user.model.js";
+import { Company } from "../models/company.model.js";
 import bcryptjs from "bcryptjs";
 import { generateToken } from "../utils/generateToken.js";
-import { Company } from "../models/company.model.js";
 
 export async function registerCompany(req, res) {
   try {
@@ -12,7 +12,9 @@ export async function registerCompany(req, res) {
         .json({ success: false, message: "All fields are required" });
     }
 
-    const findDublEmail = await User.findOne({ company_email: company_email });
+    const findDublEmail = await Company.findOne({
+      company_email: company_email,
+    });
 
     if (findDublEmail) {
       return res.status(400).json({
@@ -21,7 +23,7 @@ export async function registerCompany(req, res) {
       });
     }
 
-    const findDublUser = await User.findOne({ company_name: company_name });
+    const findDublUser = await Company.findOne({ company_name: company_name });
 
     if (findDublUser) {
       return res.status(400).json({
@@ -49,6 +51,23 @@ export async function registerCompany(req, res) {
   }
 }
 
+export async function getAllCompanies(req, res) {
+  try {
+    const companies = await Company.find();
+
+    res.status(200).json({
+      success: true,
+      message: "Get companies list successfully",
+      companies: companies,
+    });
+  } catch (error) {
+    res.status(500).json({
+      success: false,
+      message: "Internal server error",
+    });
+  }
+}
+
 export async function login(req, res) {
   try {
     const { email, password, company_name } = req.body;
@@ -59,10 +78,28 @@ export async function login(req, res) {
         .json({ success: false, message: "All fields are required" });
     }
 
-    const findUser = await User.findOne({
-      email: email,
+    const company = await Company.findOne({
       company_name: company_name,
     });
+
+    if (!company) {
+      return res.status(404).json({
+        success: false,
+        message: "Company not found",
+      });
+    }
+
+    const findUser = await User.findOne({
+      email: email,
+      company_id: company._id,
+    });
+
+    if (!findUser) {
+      return res.status(404).json({
+        success: false,
+        message: "User not found in this company",
+      });
+    }
 
     const isPasswordCorrect = await bcryptjs.compare(
       password,
@@ -135,7 +172,9 @@ export async function addUser(req, res) {
       email: email,
       username: username,
       password: hashedPassword,
+      company_id: company_id,
     });
+
     await newUser.save();
 
     const user = newUser.toObject();
@@ -145,6 +184,24 @@ export async function addUser(req, res) {
       success: true,
       message: "User registered successfully",
       user: user,
+    });
+  } catch (error) {
+    res.status(500).json({
+      success: false,
+      message: "Internal server error",
+    });
+  }
+}
+
+export async function getAllUsers(req, res) {
+  try {
+    const { company_id } = req.user;
+    const users = await User.find({ company_id }).populate("company_id");
+
+    res.status(200).json({
+      success: true,
+      message: "Get companies list successfully",
+      users: users,
     });
   } catch (error) {
     res.status(500).json({
